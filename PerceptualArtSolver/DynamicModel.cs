@@ -88,10 +88,9 @@ namespace PerceptualArtSolver
             ibuf.RemoveRange(triangle * 3, 3);
         }
 
+
         protected void SplitTriangle(Vector3 point, int triangle)
         {
-            RemoveTriangle(triangle);
-
             vbuf.Add(new VertexPositionNormalTexture(point, new Vector3(0, 0, 0), new Vector2(0, 0)));
 
             Vector3 sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;
@@ -100,19 +99,51 @@ namespace PerceptualArtSolver
 
             if (Vector3.Cross(sideA, point).LengthSquared() > 0)
             {
-                AddTriangle((short) (vbuf.Count - 1), (short) (triangle * 3), (short) (triangle * 3 + 1));
+                AddTriangle((short) (vbuf.Count - 1), (short) ibuf[(triangle * 3)], (short) ibuf[(triangle * 3 + 1)]);
             }
 
             if (Vector3.Cross(sideB, point).LengthSquared() > 0)
             {
-                AddTriangle((short) (triangle * 3 + 2), (short) (vbuf.Count - 1), (short) (triangle * 3 + 1));
+                AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) (vbuf.Count - 1),
+                    (short) ibuf[(triangle * 3 + 1)]);
             }
 
             if (Vector3.Cross(sideC, point).LengthSquared() > 0)
             {
-                AddTriangle((short) (triangle * 3 + 2), (short) (triangle * 3), (short) (vbuf.Count - 1));
+                AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) ibuf[(triangle * 3)], (short) (vbuf.Count - 1));
             }
-            
+
+            RemoveTriangle(triangle);
+        }
+
+        private static void BarycentricInverse(Vector3 p0, Vector3 p1, Vector3 p2, out Matrix matrix)
+        {
+            Vector3 d1 = p1 - p0;
+            Vector3 d2 = p2 - p0;
+            float A = d1.X;
+            float B = d2.X;
+            float C = p0.X;
+            float D = d1.Y;
+            float E = d2.Y;
+            float F = p0.Y;
+            float G = d1.Z;
+            float H = d2.Z;
+            float I = p0.Z;
+
+            float d = 1 / ((-C) * E * G + B * F * G + C * D * H - A * F * H - B * D * I + A * E * I);
+
+            matrix = new Matrix();
+            matrix[0, 0] = -(F * H) + E * I;
+            matrix[0, 1] = C * H - B * I;
+            matrix[0, 2] = -(C * E) + B * F;
+            matrix[1, 0] = F * G - D * I;
+            matrix[1, 1] = -(C * G) + A * I;
+            matrix[1, 2] = C * D - A * F;
+            matrix[2, 0] = -(E * G) + D * H;
+            matrix[2, 1] = B * G - A * H;
+            matrix[2, 2] = -(B * D) + A * E;
+
+            matrix *= d;
         }
     }
 }

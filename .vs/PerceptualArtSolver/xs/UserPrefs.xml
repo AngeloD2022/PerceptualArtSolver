@@ -1,0 +1,31 @@
+﻿<Properties StartupConfiguration="{0143D6FF-B5E3-4019-837F-94305BA38728}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="PerceptualArtSolver/DynamicModel.cs">
+    <Files>
+      <File FileName="PerceptualArtSolver/Game1.cs" Line="103" Column="51" />
+      <File FileName="PerceptualArtSolver/DynamicModel.cs" Line="88" Column="1" />
+      <File FileName="PerceptualArtSolver/Square.cs" />
+      <File FileName="PerceptualArtSolver/DualPerspectiveObject.cs" />
+      <File FileName="PerceptualArtSolver/Camera.cs" />
+      <File FileName="PerceptualArtSolver/Cube.cs" />
+      <File FileName="PerceptualArtSolver/CubeModel.cs" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="PerceptualArtSolver" expanded="True">
+            <Node name="PerceptualArtSolver" expanded="True">
+              <Node name="DynamicModel.cs" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.ItemProperties.PerceptualArtSolver PreferredExecutionTarget="MonoDevelop.Default" />
+</Properties>

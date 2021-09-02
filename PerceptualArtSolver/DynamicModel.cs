@@ -1,6 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Vector2 = Microsoft.Xna.Framework.Vector2;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace PerceptualArtSolver
 {
@@ -48,11 +51,11 @@ namespace PerceptualArtSolver
             var triangleVertexA = vbuf[ibuf[triangle * 3]].Position;
             var triangleVertexB = vbuf[ibuf[triangle * 3 + 1]].Position;
             var triangleVertexC = vbuf[ibuf[triangle * 3 + 2]].Position;
-
+            
             var sideA = triangleVertexB - triangleVertexA;
             var sideB = triangleVertexC - triangleVertexB;
             var sideC = triangleVertexA - triangleVertexC;
-
+            
             var a = point - sideA;
             var b = point - sideB;
             var c = point - sideC;
@@ -60,7 +63,7 @@ namespace PerceptualArtSolver
             var xa = Vector3.Cross(sideA, a);
             var xb = Vector3.Cross(sideB, b);
             var xc = Vector3.Cross(sideC, c);
-
+            
             var ab = Vector3.Dot(xa, xb);
             var bc = Vector3.Dot(xb, xc);
             var ca = Vector3.Dot(xc, xa);
@@ -91,12 +94,27 @@ namespace PerceptualArtSolver
 
         protected void SplitTriangle(Vector3 point, int triangle)
         {
-            vbuf.Add(new VertexPositionNormalTexture(point, new Vector3(0, 0, 0), new Vector2(0, 0)));
 
             Vector3 sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;
             Vector3 sideB = vbuf[ibuf[triangle * 3 + 2]].Position - vbuf[ibuf[triangle * 3 + 1]].Position;
             Vector3 sideC = vbuf[ibuf[triangle * 3]].Position - vbuf[ibuf[triangle * 3 + 2]].Position;
 
+            Matrix to, from;
+            BarycentricMatrices(vbuf[ibuf[triangle * 3]].Position, vbuf[ibuf[triangle * 3 + 1]].Position,
+                vbuf[ibuf[triangle * 3 + 2]].Position, out to, out from);
+
+            Vector3 barycentric = Vector3.Transform(point, to);
+            Vector3 normal = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].Normal +
+                             barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].Normal + (1 - barycentric.Z - barycentric.Y) *
+                             barycentric.X * vbuf[ibuf[triangle * 3]].Normal;
+            
+            Vector2 textureCoordinate = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].TextureCoordinate +
+                             barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].TextureCoordinate + (1 - barycentric.X - barycentric.Y) *
+                             vbuf[ibuf[triangle * 3]].TextureCoordinate;
+
+            vbuf.Add(new VertexPositionNormalTexture(point, Vector3.Normalize(normal), textureCoordinate));
+            
+            
             if (Vector3.Cross(sideA, point).LengthSquared() > 0)
             {
                 AddTriangle((short) (vbuf.Count - 1), (short) ibuf[(triangle * 3)], (short) ibuf[(triangle * 3 + 1)]);
@@ -116,34 +134,19 @@ namespace PerceptualArtSolver
             RemoveTriangle(triangle);
         }
 
-        private static void BarycentricInverse(Vector3 p0, Vector3 p1, Vector3 p2, out Matrix matrix)
+        /// <summary>
+        /// Produces a matrix that transforms from world coordinates to barycentric coordinates.
+        /// </summary>
+        /// <param name="p0"></param>
+        /// <param name="p1"></param>
+        /// <param name="p2"></param>
+        /// <param name="to"></param>
+        public static void BarycentricMatrices(Vector3 p0, Vector3 p1, Vector3 p2, out Matrix to, out Matrix from)
         {
             Vector3 d1 = p1 - p0;
             Vector3 d2 = p2 - p0;
-            float A = d1.X;
-            float B = d2.X;
-            float C = p0.X;
-            float D = d1.Y;
-            float E = d2.Y;
-            float F = p0.Y;
-            float G = d1.Z;
-            float H = d2.Z;
-            float I = p0.Z;
-
-            float d = 1 / ((-C) * E * G + B * F * G + C * D * H - A * F * H - B * D * I + A * E * I);
-
-            matrix = new Matrix();
-            matrix[0, 0] = -(F * H) + E * I;
-            matrix[0, 1] = C * H - B * I;
-            matrix[0, 2] = -(C * E) + B * F;
-            matrix[1, 0] = F * G - D * I;
-            matrix[1, 1] = -(C * G) + A * I;
-            matrix[1, 2] = C * D - A * F;
-            matrix[2, 0] = -(E * G) + D * H;
-            matrix[2, 1] = B * G - A * H;
-            matrix[2, 2] = -(B * D) + A * E;
-
-            matrix *= d;
+            from = new Matrix(d1.X, d1.Y, d1.Z, 0, d2.X, d2.Y, d2.Z, 0, 0, 0, 1, 0, p0.X, p0.Y, p0.Z, 1);
+            Matrix.Invert(ref from, out to);
         }
     }
 }

@@ -37,22 +37,20 @@ namespace PerceptualArtSolver
         protected override void Initialize()
         {
             base.Initialize();
-            // TODO: Add your initialization logic here
-
-
+            
             var r = new Random();
 
-            //for (int i = 0; i < 10; i++)
-            //{
-            //    drawObjs.Add(new Cube()
-            //    {
-            //        Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10),
-            //        Texture = Content.Load<Texture2D>("grass")
-            //    });
-            //}
+            for (int i = 0; i < 10; i++)
+            {
+                drawObjs.Add(new Cube()
+                {
+                    Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10),
+                    Texture = Content.Load<Texture2D>("grass")
+                });
+            }
 
 
-            drawObjs.Add(new DualPerspectiveObject {Position = new Vector3(0, 0, -50)});
+            // drawObjs.Add(new DualPerspectiveObject {Position = new Vector3(0, 0, -50)});
             updateObjs.Add((IUpdateObject) drawObjs.Last());
         }
 

@@ -6,8 +6,8 @@ namespace PerceptualArtSolver
     public class CubeModel : IModel
     {
         public static BasicEffect Effect;
-        private readonly short[] ibuf;
-        private readonly VertexPositionNormalTexture[] vbuf;
+        public readonly short[] ibuf;
+        public readonly VertexPositionNormalTexture[] vbuf;
 
         public CubeModel()
         {

@@ -1,20 +1,28 @@
 ﻿<Properties StartupConfiguration="{0143D6FF-B5E3-4019-837F-94305BA38728}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="PerceptualArtSolver/DynamicModel.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="PerceptualArtSolver/Game1.cs">
     <Files>
-      <File FileName="PerceptualArtSolver/Game1.cs" Line="103" Column="51" />
-      <File FileName="PerceptualArtSolver/DynamicModel.cs" Line="88" Column="1" />
+      <File FileName="PerceptualArtSolver/Game1.cs" Line="48" Column="64" />
+      <File FileName="PerceptualArtSolver/DynamicModel.cs" />
       <File FileName="PerceptualArtSolver/Square.cs" />
       <File FileName="PerceptualArtSolver/DualPerspectiveObject.cs" />
       <File FileName="PerceptualArtSolver/Camera.cs" />
       <File FileName="PerceptualArtSolver/Cube.cs" />
       <File FileName="PerceptualArtSolver/CubeModel.cs" />
+      <File FileName="PerceptualArtSolver/Content/obj/DesktopGL/Content/.mgstats" Line="1" Column="1" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
           <Node name="PerceptualArtSolver" expanded="True">
             <Node name="PerceptualArtSolver" expanded="True">
-              <Node name="DynamicModel.cs" selected="True" />
+              <Node name="Content" expanded="True">
+                <Node name="obj" expanded="True">
+                  <Node name="DesktopGL" expanded="True">
+                    <Node name="Content" expanded="True" />
+                  </Node>
+                </Node>
+                <Node name="14376136-pack_l.jpg" selected="True" />
+              </Node>
             </Node>
           </Node>
         </State>

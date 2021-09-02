@@ -26,3 +26,4 @@
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win/lib/netcoreapp3.0/Microsoft.Win32.SystemEvents.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/unix/lib/netcoreapp3.0/System.Drawing.Common.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win/lib/netcoreapp3.0/System.Drawing.Common.dll
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/Content/14376136-pack_l.xnb

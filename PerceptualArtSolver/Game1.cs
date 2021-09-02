@@ -37,15 +37,33 @@ namespace PerceptualArtSolver
         protected override void Initialize()
         {
             base.Initialize();
+
+            // UNIT TEST: DynamicModel
+            CubeModel cubeModel = new CubeModel();
+            DynamicModel dynModel = new DynamicModel();
+            
+            dynModel.vbuf.AddRange(cubeModel.vbuf);
+            dynModel.ibuf.AddRange(cubeModel.ibuf);
+            dynModel.Effect = CubeModel.Effect;
+            dynModel.Effect.Texture = Content.Load<Texture2D>("14376136-pack_l");
+            dynModel.Effect.TextureEnabled = true;
+            dynModel.Effect.EnableDefaultLighting();
+            
+            dynModel.SplitTriangle(new Vector3(-.5f,.5f, 1), 0);
+            
             
             var r = new Random();
-
+            //
             for (int i = 0; i < 10; i++)
             {
-                drawObjs.Add(new Cube()
+                // drawObjs.Add(new Cube()
+                // {
+                //     Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10),
+                //     Texture = Content.Load<Texture2D>("grass")
+                // });
+                drawObjs.Add(new GenericModelInstance(dynModel)
                 {
-                    Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10),
-                    Texture = Content.Load<Texture2D>("grass")
+                    Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10)
                 });
             }
 
@@ -99,6 +117,8 @@ namespace PerceptualArtSolver
                 camera.Position.Z -= speed * time;
             if (ks.IsKeyDown(Keys.S))
                 camera.Position.Z += speed * time;
+            
+            
 
             foreach (var o in updateObjs)
                 o.Update(time);

@@ -10,10 +10,16 @@ namespace PerceptualArtSolver
     public class DynamicModel : IModel
     {
         public BasicEffect Effect;
-        private List<short> ibuf;
+        public List<short> ibuf;
         public IndexBuffer indexBuffer;
-        private List<VertexPositionNormalTexture> vbuf;
+        public List<VertexPositionNormalTexture> vbuf;
         public VertexBuffer vertexBuffer;
+
+        public DynamicModel()
+        {
+            ibuf = new List<short>();
+            vbuf = new List<VertexPositionNormalTexture>();
+        }
 
         public void Draw(Matrix world, Camera camera)
         {
@@ -21,7 +27,11 @@ namespace PerceptualArtSolver
             Effect.View = camera.GetView();
             Effect.Projection = camera.GetProjection();
             Effect.CurrentTechnique.Passes[0].Apply();
-
+            
+            // RasterizerState backup = Effect.GraphicsDevice.RasterizerState;
+            
+            // Effect.GraphicsDevice.RasterizerState = new RasterizerState(){FillMode = FillMode.WireFrame};
+            
             if (vertexBuffer != null)
             {
                 Effect.GraphicsDevice.SetVertexBuffer(vertexBuffer);
@@ -33,6 +43,7 @@ namespace PerceptualArtSolver
             {
                 Effect.GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, vbuf.ToArray(), 0,
                     vbuf.Count, ibuf.ToArray(), 0, ibuf.Count / 3);
+                // Effect.GraphicsDevice.RasterizerState = backup;
             }
         }
 
@@ -46,7 +57,7 @@ namespace PerceptualArtSolver
         }
 
 
-        protected bool IsInTriangle(Vector3 point, int triangle, float threshold = 0.001f)
+        public bool IsInTriangle(Vector3 point, int triangle, float threshold = 0.001f)
         {
             var triangleVertexA = vbuf[ibuf[triangle * 3]].Position;
             var triangleVertexB = vbuf[ibuf[triangle * 3 + 1]].Position;
@@ -73,26 +84,26 @@ namespace PerceptualArtSolver
                    ca * ca >= xc.LengthSquared() * xa.LengthSquared() - threshold;
         }
 
-        protected short AddVertex(VertexPositionNormalTexture vertex)
+        public short AddVertex(VertexPositionNormalTexture vertex)
         {
             vbuf.Add(vertex);
             return (short) (vbuf.Count - 1);
         }
 
-        protected void AddTriangle(short index1, short index2, short index3)
+        public void AddTriangle(short index1, short index2, short index3)
         {
             ibuf.Add(index1);
             ibuf.Add(index2);
             ibuf.Add(index3);
         }
 
-        protected void RemoveTriangle(int triangle)
+        public void RemoveTriangle(int triangle)
         {
             ibuf.RemoveRange(triangle * 3, 3);
         }
 
 
-        protected void SplitTriangle(Vector3 point, int triangle)
+        public void SplitTriangle(Vector3 point, int triangle)
         {
 
             Vector3 sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;

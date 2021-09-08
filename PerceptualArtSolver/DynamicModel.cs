@@ -27,11 +27,11 @@ namespace PerceptualArtSolver
             Effect.View = camera.GetView();
             Effect.Projection = camera.GetProjection();
             Effect.CurrentTechnique.Passes[0].Apply();
-            
-            // RasterizerState backup = Effect.GraphicsDevice.RasterizerState;
-            
-            // Effect.GraphicsDevice.RasterizerState = new RasterizerState(){FillMode = FillMode.WireFrame};
-            
+
+            RasterizerState backup = Effect.GraphicsDevice.RasterizerState;
+
+            Effect.GraphicsDevice.RasterizerState = new RasterizerState() {FillMode = FillMode.WireFrame};
+
             if (vertexBuffer != null)
             {
                 Effect.GraphicsDevice.SetVertexBuffer(vertexBuffer);
@@ -43,7 +43,7 @@ namespace PerceptualArtSolver
             {
                 Effect.GraphicsDevice.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, vbuf.ToArray(), 0,
                     vbuf.Count, ibuf.ToArray(), 0, ibuf.Count / 3);
-                // Effect.GraphicsDevice.RasterizerState = backup;
+                Effect.GraphicsDevice.RasterizerState = backup;
             }
         }
 
@@ -56,17 +56,16 @@ namespace PerceptualArtSolver
             ibuffer.SetData(ibuf.ToArray());
         }
 
-
         public bool IsInTriangle(Vector3 point, int triangle, float threshold = 0.001f)
         {
             var triangleVertexA = vbuf[ibuf[triangle * 3]].Position;
             var triangleVertexB = vbuf[ibuf[triangle * 3 + 1]].Position;
             var triangleVertexC = vbuf[ibuf[triangle * 3 + 2]].Position;
-            
+
             var sideA = triangleVertexB - triangleVertexA;
             var sideB = triangleVertexC - triangleVertexB;
             var sideC = triangleVertexA - triangleVertexC;
-            
+
             var a = point - sideA;
             var b = point - sideB;
             var c = point - sideC;
@@ -74,7 +73,7 @@ namespace PerceptualArtSolver
             var xa = Vector3.Cross(sideA, a);
             var xb = Vector3.Cross(sideB, b);
             var xc = Vector3.Cross(sideC, c);
-            
+
             var ab = Vector3.Dot(xa, xb);
             var bc = Vector3.Dot(xb, xc);
             var ca = Vector3.Dot(xc, xa);
@@ -84,10 +83,20 @@ namespace PerceptualArtSolver
                    ca * ca >= xc.LengthSquared() * xa.LengthSquared() - threshold;
         }
 
-        public short AddVertex(VertexPositionNormalTexture vertex)
+        public void AddVertex(Vector3 position)
         {
-            vbuf.Add(vertex);
-            return (short) (vbuf.Count - 1);
+            //go through all existing triangles
+            // if this point is on or inside the triangle,
+            // split it at that position.
+            int triangles = ibuf.Count / 3;
+            for (int i = triangles/3 - 1; i >= 0; i--)
+            {
+                if (IsInTriangle(position, i))
+                {
+                    SplitTriangle(position, i);
+                }
+            }
+
         }
 
         public void AddTriangle(short index1, short index2, short index3)
@@ -102,10 +111,8 @@ namespace PerceptualArtSolver
             ibuf.RemoveRange(triangle * 3, 3);
         }
 
-
         public void SplitTriangle(Vector3 point, int triangle)
         {
-
             Vector3 sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;
             Vector3 sideB = vbuf[ibuf[triangle * 3 + 2]].Position - vbuf[ibuf[triangle * 3 + 1]].Position;
             Vector3 sideC = vbuf[ibuf[triangle * 3]].Position - vbuf[ibuf[triangle * 3 + 2]].Position;
@@ -118,26 +125,26 @@ namespace PerceptualArtSolver
             Vector3 normal = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].Normal +
                              barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].Normal + (1 - barycentric.Z - barycentric.Y) *
                              barycentric.X * vbuf[ibuf[triangle * 3]].Normal;
-            
+
             Vector2 textureCoordinate = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].TextureCoordinate +
-                             barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].TextureCoordinate + (1 - barycentric.X - barycentric.Y) *
-                             vbuf[ibuf[triangle * 3]].TextureCoordinate;
+                                        barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].TextureCoordinate +
+                                        (1 - barycentric.X - barycentric.Y) *
+                                        vbuf[ibuf[triangle * 3]].TextureCoordinate;
 
             vbuf.Add(new VertexPositionNormalTexture(point, Vector3.Normalize(normal), textureCoordinate));
-            
-            
-            if (Vector3.Cross(sideA, point).LengthSquared() > 0)
+
+
+            if (Vector3.Cross(sideA, point - vbuf[ibuf[triangle * 3]].Position).LengthSquared() > 0)
             {
                 AddTriangle((short) (vbuf.Count - 1), (short) ibuf[(triangle * 3)], (short) ibuf[(triangle * 3 + 1)]);
             }
 
-            if (Vector3.Cross(sideB, point).LengthSquared() > 0)
+            if (Vector3.Cross(sideB, point - vbuf[ibuf[triangle * 3 + 1]].Position ).LengthSquared() > 0)
             {
-                AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) (vbuf.Count - 1),
-                    (short) ibuf[(triangle * 3 + 1)]);
+                AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) (vbuf.Count - 1), (short) ibuf[(triangle * 3 + 1)]);
             }
 
-            if (Vector3.Cross(sideC, point).LengthSquared() > 0)
+            if (Vector3.Cross(sideC, point- vbuf[ibuf[triangle * 3 + 2]].Position).LengthSquared() > 0)
             {
                 AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) ibuf[(triangle * 3)], (short) (vbuf.Count - 1));
             }

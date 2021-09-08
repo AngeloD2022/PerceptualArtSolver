@@ -49,10 +49,12 @@ namespace PerceptualArtSolver
             dynModel.Effect.TextureEnabled = true;
             dynModel.Effect.EnableDefaultLighting();
             
-            dynModel.SplitTriangle(new Vector3(-.5f,.5f, 1), 0);
-            
-            
             var r = new Random();
+            dynModel.SplitTriangle(new Vector3(0.5f,.5f, 1), 0);
+            dynModel.SplitTriangle(new Vector3(0.5f,-.5f, 1), 0);
+            
+            
+            
             //
             for (int i = 0; i < 10; i++)
             {
@@ -110,14 +112,13 @@ namespace PerceptualArtSolver
             // TODO: Add your update logic here
 
             var ks = Keyboard.GetState();
-            var speed = 3.0f;
+            var speed = 5.0f;
             var time = (float) gameTime.ElapsedGameTime.TotalSeconds;
 
             if (ks.IsKeyDown(Keys.W))
                 camera.Position.Z -= speed * time;
             if (ks.IsKeyDown(Keys.S))
                 camera.Position.Z += speed * time;
-            
             
 
             foreach (var o in updateObjs)

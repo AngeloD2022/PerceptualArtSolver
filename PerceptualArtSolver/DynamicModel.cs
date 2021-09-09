@@ -84,6 +84,26 @@ namespace PerceptualArtSolver
                    ca * ca >= xc.LengthSquared() * xa.LengthSquared() - threshold;
         }
 
+        public static bool FindCoplanar(Vector3 e1, Vector3 e2, Vector3 t1, Vector3 t2, Vector3 t3, out Vector3 intersection)
+        {
+            Vector3 normal = Vector3.Cross(t2 - t1, t3 - t1);
+
+            float t = Vector3.Dot(t1 - e1, normal) / Vector3.Dot(e2 - e1, normal);
+
+            if (t > 1 || t < 0)
+            {
+                intersection = new Vector3();
+                return false;
+            }
+            intersection = e1 + t * (e2 - e1);
+            return true;
+            
+        }
+        public void IsInsideSolid(Vector3 point)
+        {
+            
+        }
+
         public void AddVertex(Vector3 position)
         {
             //go through all existing triangles

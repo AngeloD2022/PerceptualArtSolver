@@ -66,9 +66,9 @@ namespace PerceptualArtSolver
             var sideB = triangleVertexC - triangleVertexB;
             var sideC = triangleVertexA - triangleVertexC;
 
-            var a = point - sideA;
-            var b = point - sideB;
-            var c = point - sideC;
+            var a = point - triangleVertexA;
+            var b = point - triangleVertexB;
+            var c = point - triangleVertexC;
 
             var xa = Vector3.Cross(sideA, a);
             var xb = Vector3.Cross(sideB, b);
@@ -78,7 +78,8 @@ namespace PerceptualArtSolver
             var bc = Vector3.Dot(xb, xc);
             var ca = Vector3.Dot(xc, xa);
 
-            return ab * ab >= xa.LengthSquared() * xb.LengthSquared() - threshold &&
+            return ab >= 0 && bc >=0 && ca >= 0 &&
+                   ab * ab >= xa.LengthSquared() * xb.LengthSquared() - threshold &&
                    bc * bc >= xb.LengthSquared() * xc.LengthSquared() - threshold &&
                    ca * ca >= xc.LengthSquared() * xa.LengthSquared() - threshold;
         }
@@ -89,7 +90,7 @@ namespace PerceptualArtSolver
             // if this point is on or inside the triangle,
             // split it at that position.
             int triangles = ibuf.Count / 3;
-            for (int i = triangles/3 - 1; i >= 0; i--)
+            for (int i = triangles - 1; i >= 0; i--)
             {
                 if (IsInTriangle(position, i))
                 {

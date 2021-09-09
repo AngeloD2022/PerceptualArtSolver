@@ -50,8 +50,8 @@ namespace PerceptualArtSolver
             dynModel.Effect.EnableDefaultLighting();
             
             var r = new Random();
-            dynModel.SplitTriangle(new Vector3(0.5f,.5f, 1), 0);
-            dynModel.SplitTriangle(new Vector3(0.5f,-.5f, 1), 0);
+            dynModel.AddVertex(new Vector3(0.5f,.5f, 1));
+            dynModel.AddVertex(new Vector3(0.5f,-.5f, 1));
             
             
             

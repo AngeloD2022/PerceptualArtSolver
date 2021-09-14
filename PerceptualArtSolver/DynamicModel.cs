@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -58,6 +59,7 @@ namespace PerceptualArtSolver
 
         public bool IsInTriangle(Vector3 point, int triangle, float threshold = 0.001f)
         {
+            // O(1)
             var triangleVertexA = vbuf[ibuf[triangle * 3]].Position;
             var triangleVertexB = vbuf[ibuf[triangle * 3 + 1]].Position;
             var triangleVertexC = vbuf[ibuf[triangle * 3 + 2]].Position;
@@ -83,9 +85,11 @@ namespace PerceptualArtSolver
                    bc * bc >= xb.LengthSquared() * xc.LengthSquared() - threshold &&
                    ca * ca >= xc.LengthSquared() * xa.LengthSquared() - threshold;
         }
-
+        
+        
         public static bool FindCoplanar(Vector3 e1, Vector3 e2, Vector3 t1, Vector3 t2, Vector3 t3, out Vector3 intersection)
         {
+            //O(1)
             Vector3 normal = Vector3.Cross(t2 - t1, t3 - t1);
 
             float t = Vector3.Dot(t1 - e1, normal) / Vector3.Dot(e2 - e1, normal);
@@ -97,16 +101,95 @@ namespace PerceptualArtSolver
             }
             intersection = e1 + t * (e2 - e1);
             return true;
-            
         }
-        public void IsInsideSolid(Vector3 point)
+        
+        public DynamicModel SubtractSolid(DynamicModel model)
         {
+            // O(N^2)
             
+            // First, add a vertex where each triangle side on the model intersects...
+            return this.UnionWith(model.Invert());
+            // Now, we remove any vertex inside the subtraction.
         }
 
+        public void SplitAtIntersections(DynamicModel other)
+        {
+            for (int i = 0; i < other.ibuf.Count; i+=3)
+            {
+                Vector3 vA = other.vbuf[other.ibuf[i]].Position;
+                Vector3 vB = other.vbuf[other.ibuf[i+1]].Position;
+                Vector3 vC = other.vbuf[other.ibuf[i+2]].Position;
+
+                for (int j = 0; j < ibuf.Count; j+=3)
+                {
+                    Vector3 tA = vbuf[ibuf[i]].Position;
+                    Vector3 tB = vbuf[ibuf[i+1]].Position;
+                    Vector3 tC = vbuf[ibuf[i+2]].Position;
+                    
+                    Vector3 intersection;
+                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection))
+                        AddVertex(intersection);
+                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection))
+                        AddVertex(intersection);
+                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection))
+                        AddVertex(intersection);
+                }
+            }
+        }
+        
+        public bool Contains(Vector3 point)
+        {
+            // int nt = 0;
+            float nd = float.PositiveInfinity;
+
+            for (int i = 0; i < ibuf.Count/3; i++)
+            {
+                if (IsInTriangle(point, i, float.PositiveInfinity))
+                {
+                    // (C x A) - (B x A)
+                    int t = i * 3;
+                    Vector3 normal = Vector3.Cross(vbuf[ibuf[t + 2]].Position - vbuf[ibuf[t]].Position,
+                                     vbuf[ibuf[t + 1]].Position - vbuf[ibuf[t]].Position);
+                    normal = Vector3.Normalize(normal);
+                    
+                    float dot = Vector3.Dot(point-vbuf[ibuf[t + 2]].Position, normal);
+                    
+                    if (i == 0)
+                    {
+                        // nt = 0;
+                        nd = dot;
+                        continue;
+                    }
+
+                    if (Math.Abs(nd) > Math.Abs(dot))
+                    {
+                        // nt = i;
+                        nd = dot;
+                    }
+                    
+                }
+            }
+
+            return nd <= 0;
+        }
+
+        public DynamicModel UnionWith(DynamicModel other)
+        {
+            DynamicModel a = this;
+            DynamicModel b = other;
+            this.SplitAtIntersections(b);
+            other.SplitAtIntersections(a);
+            
+            // eliminate extraneous triangles... 
+            
+            
+            
+        }
+        
         public void AddVertex(Vector3 position)
         {
-            //go through all existing triangles
+            // O(triangles)
+            // go through all existing triangles
             // if this point is on or inside the triangle,
             // split it at that position.
             int triangles = ibuf.Count / 3;
@@ -134,6 +217,7 @@ namespace PerceptualArtSolver
 
         public void SplitTriangle(Vector3 point, int triangle)
         {
+            // O(1)
             Vector3 sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;
             Vector3 sideB = vbuf[ibuf[triangle * 3 + 2]].Position - vbuf[ibuf[triangle * 3 + 1]].Position;
             Vector3 sideC = vbuf[ibuf[triangle * 3]].Position - vbuf[ibuf[triangle * 3 + 2]].Position;

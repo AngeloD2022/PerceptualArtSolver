@@ -106,10 +106,47 @@ namespace PerceptualArtSolver
         public DynamicModel SubtractSolid(DynamicModel model)
         {
             // O(N^2)
+
+            DynamicModel A = this;
+            DynamicModel B = model;
             
-            // First, add a vertex where each triangle side on the model intersects...
-            return this.UnionWith(model.Invert());
-            // Now, we remove any vertex inside the subtraction.
+            A.SplitAtIntersections(B);
+            B.SplitAtIntersections(A);
+            
+            // Remove from A any triangles that are inside B...
+            for (int i = A.ibuf.Count-3; i >= 0; i-=3)
+            {
+                Vector3 a, b, c;
+                a = A.vbuf[A.ibuf[i]].Position;
+                b = A.vbuf[A.ibuf[i+1]].Position;
+                c = A.vbuf[A.ibuf[i+2]].Position;
+
+                if (B.Contains(a) && B.Contains(b) && B.Contains(c))
+                {
+                    A.RemoveTriangle(i/3);
+                }
+            }
+
+            for (int i = 0; i < B.ibuf.Count; i+=3)
+            {
+                VertexPositionNormalTexture a, b, c;
+                a = B.vbuf[B.ibuf[i]];
+                b = B.vbuf[B.ibuf[i+1]];
+                c = B.vbuf[B.ibuf[i+2]];
+                
+                if (A.Contains(a.Position) && A.Contains(b.Position) && A.Contains(c.Position))
+                {
+                    int index = A.vbuf.Count;
+                    
+                    A.vbuf.Add(a);
+                    A.vbuf.Add(b);
+                    A.vbuf.Add(c);
+                    A.AddTriangle((short)(index+2),(short)(index+1),(short)(index));
+                    
+                }
+            }
+
+            return A;
         }
 
         public void SplitAtIntersections(DynamicModel other)
@@ -172,20 +209,9 @@ namespace PerceptualArtSolver
 
             return nd <= 0;
         }
-
-        public DynamicModel UnionWith(DynamicModel other)
-        {
-            DynamicModel a = this;
-            DynamicModel b = other;
-            this.SplitAtIntersections(b);
-            other.SplitAtIntersections(a);
-            
-            // eliminate extraneous triangles... 
-            
-            
-            
-        }
         
+        
+
         public void AddVertex(Vector3 position)
         {
             // O(triangles)

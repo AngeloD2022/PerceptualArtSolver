@@ -10,6 +10,9 @@ namespace PerceptualArtSolver
         public float FieldOfView;
         public float NearPlane;
         public Vector3 Position;
+        public float Yaw;
+        public float Pitch;
+        
 
         public Camera()
         {
@@ -19,9 +22,14 @@ namespace PerceptualArtSolver
             FarPlane = 100f;
         }
 
+        public Matrix GetWorld()
+        {
+            return Matrix.CreateRotationX(Pitch) * Matrix.CreateRotationY(Yaw) * Matrix.CreateTranslation(Position);
+        }
+
         public Matrix GetView()
         {
-            return Matrix.CreateTranslation(-Position);
+            return Matrix.CreateTranslation(-Position) * Matrix.CreateRotationY(-Yaw) * Matrix.CreateRotationX(-Pitch);
         }
 
         public Matrix GetProjection()

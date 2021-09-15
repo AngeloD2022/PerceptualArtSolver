@@ -121,10 +121,29 @@ namespace PerceptualArtSolver
             var time = (float) gameTime.ElapsedGameTime.TotalSeconds;
 
             if (ks.IsKeyDown(Keys.W))
-                camera.Position.Z -= speed * time;
+                // camera.Position.Z -= speed * time;
+                camera.Position += camera.GetWorld().Forward * speed * time;
             if (ks.IsKeyDown(Keys.S))
-                camera.Position.Z += speed * time;
+                // camera.Position.Z += speed * time;
+                camera.Position += camera.GetWorld().Backward * speed * time;
+            if (ks.IsKeyDown(Keys.A))
+                // camera.Position.Z += speed * time;
+                camera.Position += camera.GetWorld().Left * speed * time;
+            if (ks.IsKeyDown(Keys.D))
+                // camera.Position.Z += speed * time;
+                camera.Position += camera.GetWorld().Right * speed * time;
+
+            if (ks.IsKeyDown(Keys.Down))
+                camera.Pitch -= 0.5f * time;
             
+            if (ks.IsKeyDown(Keys.Up))
+                camera.Pitch += 0.5f * time;
+            
+            if (ks.IsKeyDown(Keys.Left))
+                camera.Yaw += 0.5f * time;
+            
+            if (ks.IsKeyDown(Keys.Right))
+                camera.Yaw -= 0.5f * time;
 
             foreach (var o in updateObjs)
                 o.Update(time);

@@ -41,6 +41,10 @@ namespace PerceptualArtSolver
             // UNIT TEST: DynamicModel
             CubeModel cubeModel = new CubeModel();
             DynamicModel dynModel = new DynamicModel();
+            DynamicModel negative = new DynamicModel();
+            Vector3 offset = new Vector3(0.5f, 0.5f, 0.5f);
+            
+            
             
             dynModel.vbuf.AddRange(cubeModel.vbuf);
             dynModel.ibuf.AddRange(cubeModel.ibuf);
@@ -49,13 +53,14 @@ namespace PerceptualArtSolver
             dynModel.Effect.TextureEnabled = true;
             dynModel.Effect.EnableDefaultLighting();
             
+            negative.ibuf.AddRange(cubeModel.ibuf);
+            negative.vbuf.AddRange(dynModel.vbuf.Select(v =>
+                new VertexPositionNormalTexture(v.Position + offset, v.Normal, v.TextureCoordinate)));
+            
+            dynModel = dynModel.SubtractSolid(negative);
+            
             var r = new Random();
-            dynModel.AddVertex(new Vector3(0.5f,.5f, 1));
-            dynModel.AddVertex(new Vector3(0.5f,-.5f, 1));
             
-            
-            
-            //
             for (int i = 0; i < 10; i++)
             {
                 // drawObjs.Add(new Cube()

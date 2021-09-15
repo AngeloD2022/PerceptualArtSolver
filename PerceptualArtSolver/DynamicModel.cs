@@ -8,7 +8,7 @@ using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace PerceptualArtSolver
 {
-    public class DynamicModel : IModel
+    public class DynamicModel : IModel, ICloneable
     {
         public BasicEffect Effect;
         public List<short> ibuf;
@@ -31,7 +31,7 @@ namespace PerceptualArtSolver
 
             RasterizerState backup = Effect.GraphicsDevice.RasterizerState;
 
-            Effect.GraphicsDevice.RasterizerState = new RasterizerState() {FillMode = FillMode.WireFrame};
+            // Effect.GraphicsDevice.RasterizerState = new RasterizerState() {FillMode = FillMode.WireFrame};
 
             if (vertexBuffer != null)
             {
@@ -90,10 +90,10 @@ namespace PerceptualArtSolver
         public static bool FindCoplanar(Vector3 e1, Vector3 e2, Vector3 t1, Vector3 t2, Vector3 t3, out Vector3 intersection)
         {
             //O(1)
-            Vector3 normal = Vector3.Cross(t2 - t1, t3 - t1);
+            Vector3 normal = ((Vector3.Cross(t2 - t1, t3 - t1)));
 
             float t = Vector3.Dot(t1 - e1, normal) / Vector3.Dot(e2 - e1, normal);
-
+            
             if (t > 1 || t < 0)
             {
                 intersection = new Vector3();
@@ -107,8 +107,8 @@ namespace PerceptualArtSolver
         {
             // O(N^2)
 
-            DynamicModel A = this;
-            DynamicModel B = model;
+            DynamicModel A = (DynamicModel)this.Clone();
+            DynamicModel B = (DynamicModel)model.Clone();
             
             A.SplitAtIntersections(B);
             B.SplitAtIntersections(A);
@@ -159,9 +159,9 @@ namespace PerceptualArtSolver
 
                 for (int j = 0; j < ibuf.Count; j+=3)
                 {
-                    Vector3 tA = vbuf[ibuf[i]].Position;
-                    Vector3 tB = vbuf[ibuf[i+1]].Position;
-                    Vector3 tC = vbuf[ibuf[i+2]].Position;
+                    Vector3 tA = vbuf[ibuf[j]].Position;
+                    Vector3 tB = vbuf[ibuf[j+1]].Position;
+                    Vector3 tC = vbuf[ibuf[j+2]].Position;
                     
                     Vector3 intersection;
                     if (FindCoplanar(vA, vB, tA, tB, tC, out intersection))
@@ -209,8 +209,6 @@ namespace PerceptualArtSolver
 
             return nd <= 0;
         }
-        
-        
 
         public void AddVertex(Vector3 position)
         {
@@ -296,6 +294,15 @@ namespace PerceptualArtSolver
             Vector3 d2 = p2 - p0;
             from = new Matrix(d1.X, d1.Y, d1.Z, 0, d2.X, d2.Y, d2.Z, 0, 0, 0, 1, 0, p0.X, p0.Y, p0.Z, 1);
             Matrix.Invert(ref from, out to);
+        }
+
+        public object Clone()
+        {
+            var o = new DynamicModel();
+            o.ibuf.AddRange(ibuf);
+            o.vbuf.AddRange(vbuf);
+            o.Effect = Effect;
+            return o;
         }
     }
 }

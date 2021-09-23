@@ -90,22 +90,35 @@ namespace PerceptualArtSolver
         public static bool FindCoplanar(Vector3 e1, Vector3 e2, Vector3 t1, Vector3 t2, Vector3 t3, out Vector3 intersection)
         {
             //O(1)
-            Vector3 normal = ((Vector3.Cross(t2 - t1, t3 - t1)));
+            Vector3 normal = Vector3.Cross(t2 - t1, t3 - t1);
 
-            float t = Vector3.Dot(t1 - e1, normal) / Vector3.Dot(e2 - e1, normal);
+            float denominator = Vector3.Dot(e2 - e1, normal);
+
+            if (denominator == 0)
+            {
+                intersection = new Vector3();
+                return false;
+            }
+            
+            float t = Vector3.Dot(t1 - e1, normal) / denominator;
             
             if (t > 1 || t < 0)
             {
                 intersection = new Vector3();
                 return false;
             }
+
             intersection = e1 + t * (e2 - e1);
+
             return true;
         }
         
         public DynamicModel SubtractSolid(DynamicModel model)
         {
             // O(N^2)
+            
+            // Collect list of intersections that will be split
+            // eliminate 
 
             DynamicModel A = (DynamicModel)this.Clone();
             DynamicModel B = (DynamicModel)model.Clone();
@@ -120,13 +133,13 @@ namespace PerceptualArtSolver
                 a = A.vbuf[A.ibuf[i]].Position;
                 b = A.vbuf[A.ibuf[i+1]].Position;
                 c = A.vbuf[A.ibuf[i+2]].Position;
-
+            
                 if (B.Contains(a) && B.Contains(b) && B.Contains(c))
                 {
                     A.RemoveTriangle(i/3);
                 }
             }
-
+            
             for (int i = 0; i < B.ibuf.Count; i+=3)
             {
                 VertexPositionNormalTexture a, b, c;
@@ -151,63 +164,107 @@ namespace PerceptualArtSolver
 
         public void SplitAtIntersections(DynamicModel other)
         {
+            
+            // where does other's edges intersect this's faces?...
+            // for each of other's faces...
             for (int i = 0; i < other.ibuf.Count; i+=3)
             {
                 Vector3 vA = other.vbuf[other.ibuf[i]].Position;
                 Vector3 vB = other.vbuf[other.ibuf[i+1]].Position;
                 Vector3 vC = other.vbuf[other.ibuf[i+2]].Position;
 
-                for (int j = 0; j < ibuf.Count; j+=3)
+                // go through our faces...
+                for (int j = ibuf.Count-3; j >= 0; j-=3)
                 {
                     Vector3 tA = vbuf[ibuf[j]].Position;
                     Vector3 tB = vbuf[ibuf[j+1]].Position;
                     Vector3 tC = vbuf[ibuf[j+2]].Position;
                     
                     Vector3 intersection;
-                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection))
-                        AddVertex(intersection);
-                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection))
-                        AddVertex(intersection);
-                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection))
-                        AddVertex(intersection);
+                    
+                    // if the intersection equals any of our triangle vertices, we don't need to split.
+                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != tA && intersection != tB && intersection != tC && IsInTriangle(intersection, j/3))
+                        SplitTriangle(intersection,j/3);
+                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != tA && intersection != tB && intersection != tC && IsInTriangle(intersection, j/3))
+                        SplitTriangle(intersection,j/3);
+                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection) && intersection != tA && intersection != tB && intersection != tC && IsInTriangle(intersection, j/3))
+                        SplitTriangle(intersection,j/3);
                 }
             }
+            
+            // where does this's edges intersect other's faces?...
+            // for each of other's faces...
+            for (int i = ibuf.Count-3; i >= 0; i-=3)
+            {
+                Vector3 vA = vbuf[ibuf[i]].Position;
+                Vector3 vB = vbuf[ibuf[i+1]].Position;
+                Vector3 vC = vbuf[ibuf[i+2]].Position;
+
+                // go through other's faces...
+                for (int j = 0; j < other.ibuf.Count; j+=3)
+                {
+                    Vector3 tA = other.vbuf[other.ibuf[j]].Position;
+                    Vector3 tB = other.vbuf[other.ibuf[j+1]].Position;
+                    Vector3 tC = other.vbuf[other.ibuf[j+2]].Position;
+                    
+                    Vector3 intersection;
+                    
+                    // if the intersection equals any of our triangle vertices, we don't need to split.
+                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
+                        SplitTriangle(intersection,i/3);
+                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
+                        SplitTriangle(intersection,i/3);
+                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
+                        SplitTriangle(intersection,i/3);
+                }
+            }
+            
+            
         }
         
         public bool Contains(Vector3 point)
         {
+            //FIXME: Fails detecting. Project orthographically to properly detect.
             // int nt = 0;
-            float nd = float.PositiveInfinity;
-
-            for (int i = 0; i < ibuf.Count/3; i++)
+            float nearestDistance = float.PositiveInfinity;
+            for (int i = 0; i < ibuf.Count; i+=3)
             {
-                if (IsInTriangle(point, i, float.PositiveInfinity))
-                {
-                    // (C x A) - (B x A)
-                    int t = i * 3;
-                    Vector3 normal = Vector3.Cross(vbuf[ibuf[t + 2]].Position - vbuf[ibuf[t]].Position,
-                                     vbuf[ibuf[t + 1]].Position - vbuf[ibuf[t]].Position);
-                    normal = Vector3.Normalize(normal);
-                    
-                    float dot = Vector3.Dot(point-vbuf[ibuf[t + 2]].Position, normal);
-                    
-                    if (i == 0)
-                    {
-                        // nt = 0;
-                        nd = dot;
-                        continue;
-                    }
+                // Using the X-Z plane for projection (bottom-top view).
+                Vector2 vertexA = new Vector2(vbuf[ibuf[i]].Position.X, vbuf[ibuf[i]].Position.Z);
+                Vector2 vertexB = new Vector2(vbuf[ibuf[i+1]].Position.X, vbuf[ibuf[i+1]].Position.Z);
+                Vector2 vertexC = new Vector2(vbuf[ibuf[i+2]].Position.X, vbuf[ibuf[i+2]].Position.Z);
+                Vector2 point2d = new Vector2(point.X, point.Z);
 
-                    if (Math.Abs(nd) > Math.Abs(dot))
-                    {
-                        // nt = i;
-                        nd = dot;
-                    }
-                    
+                Vector2 sideA = vertexB - vertexA;
+                Vector2 sideB = vertexC - vertexB;
+                Vector2 sideC = vertexA - vertexC;
+                Vector2 segmentA = point2d - vertexA;
+                Vector2 segmentB = point2d - vertexB;
+                Vector2 segmentC = point2d - vertexC;
+                
+                // Ax*By - Ay*Bx = the z component of a cross product
+                float xa = segmentA.X * sideA.Y - segmentA.Y * sideA.X;
+                float xb = segmentB.X * sideB.Y - segmentB.Y * sideB.X;
+                float xc = segmentC.X * sideC.Y - segmentC.Y * sideC.X;
+
+                bool inTriangle = xa >= 0 && xb >= 0 && xc >= 0;
+
+                if (!inTriangle)
+                    continue;
+                
+                
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(vbuf[ibuf[i+1]].Position-vbuf[ibuf[i]].Position, point-vbuf[ibuf[i]].Position));
+                float dot = Vector3.Dot(normal, point - vbuf[ibuf[i]].Position);
+                
+                if (Math.Abs(nearestDistance) > Math.Abs(dot) && inTriangle)
+                {
+                    nearestDistance = dot;
                 }
+
             }
 
-            return nd <= 0;
+            return nearestDistance < 0;
+            
         }
 
         public void AddVertex(Vector3 position)
@@ -216,12 +273,11 @@ namespace PerceptualArtSolver
             // go through all existing triangles
             // if this point is on or inside the triangle,
             // split it at that position.
-            int triangles = ibuf.Count / 3;
-            for (int i = triangles - 1; i >= 0; i--)
+            for (int i = ibuf.Count - 3; i >= 0; i-=3)
             {
-                if (IsInTriangle(position, i))
+                if (IsInTriangle(position, i/3))
                 {
-                    SplitTriangle(position, i);
+                    SplitTriangle(position, i/3);
                 }
             }
 
@@ -251,6 +307,8 @@ namespace PerceptualArtSolver
                 vbuf[ibuf[triangle * 3 + 2]].Position, out to, out from);
 
             Vector3 barycentric = Vector3.Transform(point, to);
+            
+            // normal = b_x * vB 
             Vector3 normal = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].Normal +
                              barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].Normal + (1 - barycentric.Z - barycentric.Y) *
                              barycentric.X * vbuf[ibuf[triangle * 3]].Normal;

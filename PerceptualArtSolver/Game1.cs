@@ -42,7 +42,7 @@ namespace PerceptualArtSolver
             CubeModel cubeModel = new CubeModel();
             DynamicModel dynModel = new DynamicModel();
             DynamicModel negative = new DynamicModel();
-            Vector3 offset = new Vector3(0.5f, 0.5f, 0.5f);
+            Vector3 offset = new Vector3(1f, 1f, 1f);
             
             
             

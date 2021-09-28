@@ -124,7 +124,7 @@ namespace PerceptualArtSolver
             DynamicModel B = (DynamicModel)model.Clone();
             
             A.SplitAtIntersections(B);
-            B.SplitAtIntersections(A);
+            B.SplitAtIntersections(this);
             
             // Remove from A any triangles that are inside B...
             for (int i = A.ibuf.Count-3; i >= 0; i-=3)
@@ -154,7 +154,7 @@ namespace PerceptualArtSolver
                     A.vbuf.Add(a);
                     A.vbuf.Add(b);
                     A.vbuf.Add(c);
-                    A.AddTriangle((short)(index+2),(short)(index+1),(short)(index));
+                    A.AddTriangle((short)(index+2),(short)(index+1), (short)(index));
                     
                 }
             }
@@ -224,11 +224,17 @@ namespace PerceptualArtSolver
         
         public bool Contains(Vector3 point)
         {
+            
             //FIXME: Fails detecting. Project orthographically to properly detect.
             // int nt = 0;
             float nearestDistance = float.PositiveInfinity;
             for (int i = 0; i < ibuf.Count; i+=3)
             {
+                // Console.WriteLine($"\ni == {i}, Triangle {i/3} ------------");
+                // Console.WriteLine($"A = {vbuf[ibuf[i]].Position}");
+                // Console.WriteLine($"B = {vbuf[ibuf[i+1]].Position}");
+                // Console.WriteLine($"C = {vbuf[ibuf[i+2]].Position}");
+                
                 // Using the X-Z plane for projection (bottom-top view).
                 Vector2 vertexA = new Vector2(vbuf[ibuf[i]].Position.X, vbuf[ibuf[i]].Position.Z);
                 Vector2 vertexB = new Vector2(vbuf[ibuf[i+1]].Position.X, vbuf[ibuf[i+1]].Position.Z);
@@ -238,6 +244,10 @@ namespace PerceptualArtSolver
                 Vector2 sideA = vertexB - vertexA;
                 Vector2 sideB = vertexC - vertexB;
                 Vector2 sideC = vertexA - vertexC;
+                
+                if (sideA.X * sideB.Y - sideA.Y * sideB.X == 0)
+                    continue;
+                
                 Vector2 segmentA = point2d - vertexA;
                 Vector2 segmentB = point2d - vertexB;
                 Vector2 segmentC = point2d - vertexC;
@@ -247,13 +257,12 @@ namespace PerceptualArtSolver
                 float xb = segmentB.X * sideB.Y - segmentB.Y * sideB.X;
                 float xc = segmentC.X * sideC.Y - segmentC.Y * sideC.X;
 
-                bool inTriangle = xa >= 0 && xb >= 0 && xc >= 0;
+                bool inTriangle = xa >= 0 && xb >= 0 && xc >= 0 || xa <= 0 && xb <= 0 && xc <= 0;
 
                 if (!inTriangle)
                     continue;
-                
-                
-                Vector3 normal = Vector3.Normalize(Vector3.Cross(vbuf[ibuf[i+1]].Position-vbuf[ibuf[i]].Position, point-vbuf[ibuf[i]].Position));
+
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(vbuf[ibuf[i+2]].Position-vbuf[ibuf[i]].Position, vbuf[ibuf[i+1]].Position-vbuf[ibuf[i]].Position));
                 float dot = Vector3.Dot(normal, point - vbuf[ibuf[i]].Position);
                 
                 if (Math.Abs(nearestDistance) > Math.Abs(dot) && inTriangle)
@@ -263,7 +272,7 @@ namespace PerceptualArtSolver
 
             }
 
-            return nearestDistance < 0;
+            return nearestDistance <= 0;
             
         }
 
@@ -350,7 +359,10 @@ namespace PerceptualArtSolver
         {
             Vector3 d1 = p1 - p0;
             Vector3 d2 = p2 - p0;
-            from = new Matrix(d1.X, d1.Y, d1.Z, 0, d2.X, d2.Y, d2.Z, 0, 0, 0, 1, 0, p0.X, p0.Y, p0.Z, 1);
+            Vector3 cross = Vector3.Cross(d2, d1);
+            
+            from = new Matrix(d1.X, d1.Y, d1.Z, 0, d2.X, d2.Y, d2.Z, 0, cross.X, cross.Y, cross.Z, 0, p0.X, p0.Y, p0.Z, 1);
+
             Matrix.Invert(ref from, out to);
         }
 

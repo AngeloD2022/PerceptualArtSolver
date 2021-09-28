@@ -1,9 +1,13 @@
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/Content/14376136-pack_l.xnb
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/PerceptualArtSolver.deps.json
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/PerceptualArtSolver.runtimeconfig.json
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/PerceptualArtSolver.runtimeconfig.dev.json
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/PerceptualArtSolver.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/PerceptualArtSolver.pdb
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/Microsoft.Win32.SystemEvents.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/MonoGame.Framework.dll
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/System.Drawing.Common.dll
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win/lib/netcoreapp3.0/Microsoft.Win32.SystemEvents.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/linux-x64/native/libSDL2-2.0.so.0
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/linux-x64/native/libopenal.so.1
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/osx/native/libSDL2-2.0.0.dylib
@@ -12,6 +16,8 @@
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win-x64/native/soft_oal.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win-x86/native/SDL2.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win-x86/native/soft_oal.dll
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/unix/lib/netcoreapp3.0/System.Drawing.Common.dll
+/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win/lib/netcoreapp3.0/System.Drawing.Common.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/obj/Debug/netcoreapp3.1/PerceptualArtSolver.csproj.AssemblyReference.cache
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/obj/Debug/netcoreapp3.1/PerceptualArtSolver.GeneratedMSBuildEditorConfig.editorconfig
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/obj/Debug/netcoreapp3.1/PerceptualArtSolver.AssemblyInfoInputs.cache
@@ -21,9 +27,3 @@
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/obj/Debug/netcoreapp3.1/PerceptualArtSolver.dll
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/obj/Debug/netcoreapp3.1/PerceptualArtSolver.pdb
 /Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/obj/Debug/netcoreapp3.1/PerceptualArtSolver.genruntimeconfig.cache
-/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/Microsoft.Win32.SystemEvents.dll
-/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/System.Drawing.Common.dll
-/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win/lib/netcoreapp3.0/Microsoft.Win32.SystemEvents.dll
-/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/unix/lib/netcoreapp3.0/System.Drawing.Common.dll
-/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/runtimes/win/lib/netcoreapp3.0/System.Drawing.Common.dll
-/Users/angelodeluca/VSProjects/PerceptualArtSolver/PerceptualArtSolver/bin/Debug/netcoreapp3.1/Content/14376136-pack_l.xnb

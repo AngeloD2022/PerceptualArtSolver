@@ -31,7 +31,7 @@ namespace PerceptualArtSolver
 
             RasterizerState backup = Effect.GraphicsDevice.RasterizerState;
 
-            // Effect.GraphicsDevice.RasterizerState = new RasterizerState() {FillMode = FillMode.WireFrame};
+            
 
             if (vertexBuffer != null)
             {
@@ -127,6 +127,7 @@ namespace PerceptualArtSolver
             B.SplitAtIntersections(this);
             
             // Remove from A any triangles that are inside B...
+            // 
             for (int i = A.ibuf.Count-3; i >= 0; i-=3)
             {
                 Vector3 a, b, c;
@@ -209,7 +210,10 @@ namespace PerceptualArtSolver
                     
                     Vector3 intersection;
                     
-                    // if the intersection equals any of our triangle vertices, we don't need to split.
+                    // FIXME: Something is terribly wrong here...
+                    
+                    
+                    
                     if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
                         SplitTriangle(intersection,i/3);
                     if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
@@ -265,7 +269,7 @@ namespace PerceptualArtSolver
                 Vector3 normal = Vector3.Normalize(Vector3.Cross(vbuf[ibuf[i+2]].Position-vbuf[ibuf[i]].Position, vbuf[ibuf[i+1]].Position-vbuf[ibuf[i]].Position));
                 float dot = Vector3.Dot(normal, point - vbuf[ibuf[i]].Position);
                 
-                if (Math.Abs(nearestDistance) > Math.Abs(dot) && inTriangle)
+                if (Math.Abs(nearestDistance) > Math.Abs(dot))
                 {
                     nearestDistance = dot;
                 }
@@ -276,22 +280,6 @@ namespace PerceptualArtSolver
             
         }
 
-        public void AddVertex(Vector3 position)
-        {
-            // O(triangles)
-            // go through all existing triangles
-            // if this point is on or inside the triangle,
-            // split it at that position.
-            for (int i = ibuf.Count - 3; i >= 0; i-=3)
-            {
-                if (IsInTriangle(position, i/3))
-                {
-                    SplitTriangle(position, i/3);
-                }
-            }
-
-        }
-
         public void AddTriangle(short index1, short index2, short index3)
         {
             ibuf.Add(index1);
@@ -299,6 +287,7 @@ namespace PerceptualArtSolver
             ibuf.Add(index3);
         }
 
+        
         public void RemoveTriangle(int triangle)
         {
             ibuf.RemoveRange(triangle * 3, 3);

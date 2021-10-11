@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Linq;
-using MonoGame.Framework;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace PerceptualArtSolver
 {
@@ -18,17 +15,17 @@ namespace PerceptualArtSolver
     {
         private readonly Camera camera;
         private readonly List<IDrawObject> drawObjs;
-        private GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
         private readonly List<IUpdateObject> updateObjs;
-        
-        #if DEBUG
-        private Matrix debugTransformation;
-        #endif
-        
+
         private CubeModel cube;
-        private DynamicModel positive;
+
+#if DEBUG
+        private Matrix debugTransformation;
+#endif
+        private GraphicsDeviceManager graphics;
         private DynamicModel negative;
+        private DynamicModel positive;
+        private SpriteBatch spriteBatch;
 
         public Game1()
         {
@@ -38,7 +35,6 @@ namespace PerceptualArtSolver
 
             drawObjs = new List<IDrawObject>();
             updateObjs = new List<IUpdateObject>();
-            
         }
 
         /// <summary>
@@ -50,83 +46,69 @@ namespace PerceptualArtSolver
         protected override void Initialize()
         {
             base.Initialize();
-            
-            #if DEBUG
 
+#if DEBUG
+            GraphicsDevice.RasterizerState = new RasterizerState {FillMode = FillMode.WireFrame};
             DynamicModel dynModel;
-            
+
             if (File.Exists("/Users/angelodeluca/Desktop/ModelDebug/difference.obj") &&
                 File.Exists("/Users/angelodeluca/Desktop/ModelDebug/positive.obj") &&
                 File.Exists("/Users/angelodeluca/Desktop/ModelDebug/negative.obj"))
             {
                 dynModel = ModelSerializer.FromObjectFile("/Users/angelodeluca/Desktop/ModelDebug/positive.obj");
+                positive = ModelSerializer.FromObjectFile("/Users/angelodeluca/Desktop/ModelDebug/positive.obj");
                 negative = ModelSerializer.FromObjectFile("/Users/angelodeluca/Desktop/ModelDebug/negative.obj");
-                
             }
             else
             {
-                CubeModel cubeModel = new CubeModel();
+                var cubeModel = new CubeModel();
                 dynModel = new DynamicModel();
                 dynModel.vbuf.AddRange(cubeModel.vbuf);
                 dynModel.ibuf.AddRange(cubeModel.ibuf);
                 negative.ibuf.AddRange(cubeModel.ibuf);
             }
             // UNIT TEST: DynamicModel
-            
+
             // Vector3 offset = new Vector3(1f, 1f, 1f);
-            
-            
+
+
             dynModel.Effect = CubeModel.Effect;
             dynModel.Effect.Texture = Content.Load<Texture2D>("14376136-pack_l");
             dynModel.Effect.TextureEnabled = true;
             dynModel.Effect.EnableDefaultLighting();
-            
-            
+
+
             // debugTransformation = new Matrix(0.99652976f, 0, -0.08323707f, 0, -0.0103775775f, 0.99219763f, -0.1242423f,
             //     0, 0.08258762f, 0.12467495f, 0.98875445f, 0, 0.09079224f, -1.0134584f, -0.55807877f, 1);
-            
+
             negative.Effect = CubeModel.Effect;
             negative.Effect.EnableDefaultLighting();
-            
+
 
             negative.Effect.Texture = Content.Load<Texture2D>("14376136-pack_l");
             negative.Effect.TextureEnabled = true;
-            
-            
+
+
             negative.vbuf.AddRange(dynModel.vbuf.Select(v =>
-                new VertexPositionNormalTexture(Vector3.Transform(v.Position, debugTransformation), v.Normal, v.TextureCoordinate)));
-            
+                new VertexPositionNormalTexture(Vector3.Transform(v.Position, debugTransformation), v.Normal,
+                    v.TextureCoordinate)));
+
             dynModel = dynModel.SubtractSolid(negative);
-            
-            var r = new Random();
-            
-            for (int i = 0; i < 10; i++)
-            {
-                // drawObjs.Add(new Cube()
-                // {
-                //     Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10),
-                //     Texture = Content.Load<Texture2D>("grass")
-                // });
-                // drawObjs.Add(new GenericModelInstance(dynModel)
-                // {
-                //     Position = new Vector3(r.Next(21) - 10, r.Next(21) - 10, r.Next(21) - 10)
-                // });
-            }
-            
+
             drawObjs.Add(new GenericModelInstance(dynModel)
             {
-                Position = new Vector3(0,0,0)
+                Position = new Vector3(0, 0, 0)
             });
-            
+
             drawObjs.Add(new GenericModelInstance(negative)
             {
-                Position = new Vector3(0,0,0)
+                Position = new Vector3(0, 0, 0)
             });
 
             // drawObjs.Add(new DualPerspectiveObject {Position = new Vector3(0, 0, -50)});
             // updateObjs.Add((IUpdateObject) drawObjs.Last());
-            
-            #elif TEST
+
+#elif TEST
             cube = new CubeModel();
             positive = new DynamicModel();
             positive.vbuf.AddRange(cube.vbuf);
@@ -147,7 +129,7 @@ namespace PerceptualArtSolver
             
             drawObjs.Add(new GenericModelInstance(positive));
             drawObjs.Add(new GenericModelInstance(negative));
-            #endif
+#endif
         }
 
         /// <summary>
@@ -204,23 +186,29 @@ namespace PerceptualArtSolver
                 // camera.Position.Z += speed * time;
                 camera.Position += camera.GetWorld().Right * speed * time;
 
+            // Ignores camera angle...
+            if (ks.IsKeyDown(Keys.Q))
+                camera.Position.Y += speed * time;
+            if (ks.IsKeyDown(Keys.E))
+                camera.Position.Y -= speed * time;
+
             if (ks.IsKeyDown(Keys.Down))
                 camera.Pitch -= 0.5f * time;
-            
+
             if (ks.IsKeyDown(Keys.Up))
                 camera.Pitch += 0.5f * time;
-            
+
             if (ks.IsKeyDown(Keys.Left))
                 camera.Yaw += 0.5f * time;
-            
+
             if (ks.IsKeyDown(Keys.Right))
                 camera.Yaw -= 0.5f * time;
 
-            
+
             foreach (var o in updateObjs)
                 o.Update(time);
 
-            #if TEST
+#if TEST
             Matrix inFrontOfCamera = Matrix.CreateTranslation(0, 0, -10) * Matrix.CreateRotationX(camera.Pitch) *
                                      Matrix.CreateRotationY(camera.Yaw) * Matrix.CreateTranslation(camera.Position);
             
@@ -236,24 +224,24 @@ namespace PerceptualArtSolver
                     v.TextureCoordinate)));
             
             ((GenericModelInstance) drawObjs[0]).Model = positive.SubtractSolid(negative);
+#endif
 
-            bool prev = false;
+            var prev = false;
             if (ks.IsKeyDown(Keys.K) && !prev)
             {
                 Console.WriteLine("Dumping model files...");
                 ModelSerializer.ToObjectFile("/Users/angelodeluca/Desktop/ModelDebug/positive.obj", positive);
                 ModelSerializer.ToObjectFile("/Users/angelodeluca/Desktop/ModelDebug/negative.obj", negative);
-                ModelSerializer.ToObjectFile("/Users/angelodeluca/Desktop/ModelDebug/difference.obj", positive.SubtractSolid(negative));
+                ModelSerializer.ToObjectFile("/Users/angelodeluca/Desktop/ModelDebug/difference.obj",
+                    positive.SubtractSolid(negative));
                 prev = true;
             }
             else
             {
-                prev = false;
+                prev = ks.IsKeyDown(Keys.K);
             }
-            
-            
-            #endif
-            
+
+
             base.Update(gameTime);
         }
 
@@ -270,16 +258,15 @@ namespace PerceptualArtSolver
             SquareModel.Effect.CurrentTechnique.Passes[0].Apply();
 
             foreach (var obj in drawObjs) obj.Draw(camera);
-            
-            #if DEBUG
-            RasterizerState backup = GraphicsDevice.RasterizerState;
-            GraphicsDevice.RasterizerState = new RasterizerState() {FillMode = FillMode.WireFrame};
+
+#if DEBUG
+            var backup = GraphicsDevice.RasterizerState;
+            GraphicsDevice.RasterizerState = new RasterizerState {FillMode = FillMode.WireFrame};
             // ((GenericModelInstance)negative).Draw(camera);
             GraphicsDevice.RasterizerState = backup;
-            #elif TEST
-            
-            #endif
-            
+#elif TEST
+#endif
+
             base.Draw(gameTime);
         }
     }

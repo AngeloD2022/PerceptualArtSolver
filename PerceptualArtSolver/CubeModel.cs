@@ -51,12 +51,12 @@ namespace PerceptualArtSolver
                 new VertexPositionNormalTexture(new Vector3(1, -1, 1), Vector3.Down, new Vector2(1, 0)),
                 new VertexPositionNormalTexture(new Vector3(-1, -1, -1), Vector3.Down, new Vector2(0, 1)),
                 new VertexPositionNormalTexture(new Vector3(1, -1, -1), Vector3.Down, new Vector2(1, 1)),
-                
+
                 // 20, 21, 22, 20, 23, 22
                 new VertexPositionNormalTexture(new Vector3(-1, 1, -1), Vector3.Up, new Vector2(0, 0)),
                 new VertexPositionNormalTexture(new Vector3(1, 1, -1), Vector3.Up, new Vector2(1, 0)),
                 new VertexPositionNormalTexture(new Vector3(-1, 1, 1), Vector3.Up, new Vector2(0, 1)),
-                
+
                 new VertexPositionNormalTexture(new Vector3(1, 1, 1), Vector3.Up, new Vector2(1, 1))
             };
         }

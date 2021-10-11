@@ -9,10 +9,10 @@ namespace PerceptualArtSolver
         public float FarPlane;
         public float FieldOfView;
         public float NearPlane;
+        public float Pitch;
         public Vector3 Position;
         public float Yaw;
-        public float Pitch;
-        
+
 
         public Camera()
         {

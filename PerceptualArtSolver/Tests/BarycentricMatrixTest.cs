@@ -1,7 +1,3 @@
-using System;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-
 namespace PerceptualArtSolver.Tests
 {
     public static class BarycentricMatrixTest

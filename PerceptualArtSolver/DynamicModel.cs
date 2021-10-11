@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Vector2 = Microsoft.Xna.Framework.Vector2;
-using Vector3 = Microsoft.Xna.Framework.Vector3;
 
 namespace PerceptualArtSolver
 {
@@ -15,11 +12,24 @@ namespace PerceptualArtSolver
         public IndexBuffer indexBuffer;
         public List<VertexPositionNormalTexture> vbuf;
         public VertexBuffer vertexBuffer;
+        
+        #if DEBUG
+        public FastLogger logger;
+        #endif
 
         public DynamicModel()
         {
             ibuf = new List<short>();
             vbuf = new List<VertexPositionNormalTexture>();
+        }
+
+        public object Clone()
+        {
+            var o = new DynamicModel();
+            o.ibuf.AddRange(ibuf);
+            o.vbuf.AddRange(vbuf);
+            o.Effect = Effect;
+            return o;
         }
 
         public void Draw(Matrix world, Camera camera)
@@ -29,9 +39,8 @@ namespace PerceptualArtSolver
             Effect.Projection = camera.GetProjection();
             Effect.CurrentTechnique.Passes[0].Apply();
 
-            RasterizerState backup = Effect.GraphicsDevice.RasterizerState;
+            var backup = Effect.GraphicsDevice.RasterizerState;
 
-            
 
             if (vertexBuffer != null)
             {
@@ -80,28 +89,29 @@ namespace PerceptualArtSolver
             var bc = Vector3.Dot(xb, xc);
             var ca = Vector3.Dot(xc, xa);
 
-            return ab >= 0 && bc >=0 && ca >= 0 &&
+            return ab >= 0 && bc >= 0 && ca >= 0 &&
                    ab * ab >= xa.LengthSquared() * xb.LengthSquared() - threshold &&
                    bc * bc >= xb.LengthSquared() * xc.LengthSquared() - threshold &&
                    ca * ca >= xc.LengthSquared() * xa.LengthSquared() - threshold;
         }
-        
-        
-        public static bool FindCoplanar(Vector3 e1, Vector3 e2, Vector3 t1, Vector3 t2, Vector3 t3, out Vector3 intersection)
+
+
+        public static bool FindCoplanar(Vector3 e1, Vector3 e2, Vector3 t1, Vector3 t2, Vector3 t3,
+            out Vector3 intersection)
         {
             //O(1)
-            Vector3 normal = Vector3.Cross(t2 - t1, t3 - t1);
+            var normal = Vector3.Cross(t2 - t1, t3 - t1);
 
-            float denominator = Vector3.Dot(e2 - e1, normal);
+            var denominator = Vector3.Dot(e2 - e1, normal);
 
             if (denominator == 0)
             {
                 intersection = new Vector3();
                 return false;
             }
-            
-            float t = Vector3.Dot(t1 - e1, normal) / denominator;
-            
+
+            var t = Vector3.Dot(t1 - e1, normal) / denominator;
+
             if (t > 1 || t < 0)
             {
                 intersection = new Vector3();
@@ -112,150 +122,201 @@ namespace PerceptualArtSolver
 
             return true;
         }
-        
-        public DynamicModel SubtractSolid(DynamicModel model)
-        {
-            // O(N^2)
-            
-            // Collect list of intersections that will be split
-            // eliminate 
 
-            DynamicModel A = (DynamicModel)this.Clone();
-            DynamicModel B = (DynamicModel)model.Clone();
+        public DynamicModel SubtractSolid(DynamicModel B)
+        {
             
-            A.SplitAtIntersections(B);
-            B.SplitAtIntersections(this);
+            #if DEBUG
+            logger = new FastLogger("Subtract Solid");
+            #endif
+
+            DynamicModel A2 = (DynamicModel) this.Clone();
+            DynamicModel B2 = (DynamicModel) B.Clone();
+            int vbufMaxA = vbuf.Count;
+            int vbufMaxB = B.vbuf.Count;
             
-            // Remove from A any triangles that are inside B...
-            // 
-            for (int i = A.ibuf.Count-3; i >= 0; i-=3)
+            #if DEBUG
+            if (A2 != this && B2 != B)
+                logger.Log(FLMessageType.CONFIRM, "A and B cloned properly.");
+            else
+                logger.Log(FLMessageType.ERROR, "A and B not cloned properly (addresses match)");
+            
+            logger.Log(FLMessageType.INFO, $"vbufA: {vbufMaxA}, vbufMaxB: {vbufMaxB}");
+            #endif
+
+            A2.SplitAtIntersections(B);
+            B2.SplitAtIntersections(this);
+
+
+
+            // Remove from A2 any triangles that are inside B...
+            for (var i = A2.ibuf.Count-3; i >= 0; i-=3)
             {
                 Vector3 a, b, c;
-                a = A.vbuf[A.ibuf[i]].Position;
-                b = A.vbuf[A.ibuf[i+1]].Position;
-                c = A.vbuf[A.ibuf[i+2]].Position;
-            
-                if (B.Contains(a) && B.Contains(b) && B.Contains(c))
+                a = A2.vbuf[A2.ibuf[i]].Position;
+                b = A2.vbuf[A2.ibuf[i+1]].Position;
+                c = A2.vbuf[A2.ibuf[i+2]].Position;
+                
+                // Remove the triangle from A2 if and only if:
+                // * one or more of the selected vertices:
+                //      - are not resultants of a split
+                //      - and are inside solid B
+
+                if (A2.ibuf[i] < vbufMaxA && B.Contains(a)
+                    || A2.ibuf[i + 1] < vbufMaxA && B.Contains(b)
+                    || A2.ibuf[i + 2] < vbufMaxA && B.Contains(c))
                 {
-                    A.RemoveTriangle(i/3);
+                    A2.RemoveTriangle(i/3);
                 }
+
             }
             
-            for (int i = 0; i < B.ibuf.Count; i+=3)
+            // Add to A2 inverted: any triangles from B2 that reside within A...
+            for (var i = 0; i < B2.ibuf.Count-3; i++)
             {
-                VertexPositionNormalTexture a, b, c;
-                a = B.vbuf[B.ibuf[i]];
-                b = B.vbuf[B.ibuf[i+1]];
-                c = B.vbuf[B.ibuf[i+2]];
+                Vector3 a, b, c;
+                a = B2.vbuf[B2.ibuf[i]].Position;
+                b = B2.vbuf[B2.ibuf[i+1]].Position;
+                c = B2.vbuf[B2.ibuf[i+2]].Position;
                 
-                if (A.Contains(a.Position) && A.Contains(b.Position) && A.Contains(c.Position))
+                // Add triangle to A2 if and only if:
+                // * One or more of the selected vertices from B2:
+                //      - not the result of a split 
+                //      - & inside us
+                if (B2.ibuf[i] < vbufMaxB && this.Contains(a)
+                    || B2.ibuf[i + 1] < vbufMaxB && this.Contains(b)
+                    || B2.ibuf[i + 2] < vbufMaxB && this.Contains(c))
                 {
-                    int index = A.vbuf.Count;
-                    
-                    A.vbuf.Add(a);
-                    A.vbuf.Add(b);
-                    A.vbuf.Add(c);
-                    A.AddTriangle((short)(index+2),(short)(index+1), (short)(index));
-                    
+                    int count = A2.vbuf.Count;
+                    A2.vbuf.Add(B2.vbuf[B2.ibuf[i]]);
+                    A2.vbuf.Add(B2.vbuf[B2.ibuf[i+1]]);
+                    A2.vbuf.Add(B2.vbuf[B2.ibuf[i+2]]);
+                    A2.ibuf.Add((short)(count + 2));
+                    A2.ibuf.Add((short)(count + 1));
+                    A2.ibuf.Add((short)(count));
                 }
             }
 
-            return A;
+            return A2;
         }
 
         public void SplitAtIntersections(DynamicModel other)
         {
-            
             // where does other's edges intersect this's faces?...
             // for each of other's faces...
-            for (int i = 0; i < other.ibuf.Count; i+=3)
+            for (var i = 0; i < other.ibuf.Count; i += 3)
             {
-                Vector3 vA = other.vbuf[other.ibuf[i]].Position;
-                Vector3 vB = other.vbuf[other.ibuf[i+1]].Position;
-                Vector3 vC = other.vbuf[other.ibuf[i+2]].Position;
-
+                
+                var vA = other.vbuf[other.ibuf[i]].Position;
+                var vB = other.vbuf[other.ibuf[i + 1]].Position;
+                var vC = other.vbuf[other.ibuf[i + 2]].Position;
+                
+#if DEBUG
+                logger.Info($"1-B-{i/3}: {vA}, {vB}, {vC}");
+#endif
+                
                 // go through our faces...
-                for (int j = ibuf.Count-3; j >= 0; j-=3)
+                for (var j = ibuf.Count - 3; j >= 0; j -= 3)
                 {
-                    Vector3 tA = vbuf[ibuf[j]].Position;
-                    Vector3 tB = vbuf[ibuf[j+1]].Position;
-                    Vector3 tC = vbuf[ibuf[j+2]].Position;
+                    var tA = vbuf[ibuf[j]].Position;
+                    var tB = vbuf[ibuf[j + 1]].Position;
+                    var tC = vbuf[ibuf[j + 2]].Position;
+
+#if DEBUG
+                    logger.Info($"1-A-{j/3}: {tA}, {tB}, {tC}");
+#endif
                     
                     Vector3 intersection;
-                    
+                    // TODO: make this look like the below loop.
                     // if the intersection equals any of our triangle vertices, we don't need to split.
-                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != tA && intersection != tB && intersection != tC && IsInTriangle(intersection, j/3))
-                        SplitTriangle(intersection,j/3);
-                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != tA && intersection != tB && intersection != tC && IsInTriangle(intersection, j/3))
-                        SplitTriangle(intersection,j/3);
-                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection) && intersection != tA && intersection != tB && intersection != tC && IsInTriangle(intersection, j/3))
-                        SplitTriangle(intersection,j/3);
+                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != tA &&
+                        intersection != tB && intersection != tC && IsInTriangle(intersection, j / 3))
+                    {
+#if DEBUG
+                        logger.Warning($"BA - SplitTriangle called: coplanar(vA,bB) = {intersection}, thisTri: {j/3}, otherTri: {i/3}");
+#endif
+                        SplitTriangle(intersection, j / 3);
+                    }
+
+                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != tA &&
+                        intersection != tB && intersection != tC && IsInTriangle(intersection, j / 3))
+                    {
+#if DEBUG
+                        logger.Warning($"BA - SplitTriangle called: coplanar(vB,vC) = {intersection}, thisTri: {j/3}, otherTri: {i/3}");
+#endif
+                        SplitTriangle(intersection, j / 3);
+                    }
+
+                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection) && intersection != tA &&
+                        intersection != tB && intersection != tC && IsInTriangle(intersection, j / 3))
+                    {
+#if DEBUG
+                        logger.Warning($"BA - SplitTriangle called: coplanar(vC,vA) = {intersection}, thisTri: {j/3}, otherTri: {i/3}");
+#endif
+                        SplitTriangle(intersection, j / 3);
+                    }
                 }
             }
-            
+
             // where does this's edges intersect other's faces?...
             // for each of other's faces...
-            for (int i = ibuf.Count-3; i >= 0; i-=3)
+            for (var i = ibuf.Count - 3; i >= 0; i -= 3)
             {
-                Vector3 vA = vbuf[ibuf[i]].Position;
-                Vector3 vB = vbuf[ibuf[i+1]].Position;
-                Vector3 vC = vbuf[ibuf[i+2]].Position;
+                var vA = vbuf[ibuf[i]].Position;
+                var vB = vbuf[ibuf[i + 1]].Position;
+                var vC = vbuf[ibuf[i + 2]].Position;
 
                 // go through other's faces...
-                for (int j = 0; j < other.ibuf.Count; j+=3)
+                for (var j = 0; j < other.ibuf.Count; j += 3)
                 {
-                    Vector3 tA = other.vbuf[other.ibuf[j]].Position;
-                    Vector3 tB = other.vbuf[other.ibuf[j+1]].Position;
-                    Vector3 tC = other.vbuf[other.ibuf[j+2]].Position;
-                    
+                    var tA = other.vbuf[other.ibuf[j]].Position;
+                    var tB = other.vbuf[other.ibuf[j + 1]].Position;
+                    var tC = other.vbuf[other.ibuf[j + 2]].Position;
+                
                     Vector3 intersection;
-                    
-                    // FIXME: Something is terribly wrong here...
-                    
-                    
-                    
-                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
-                        SplitTriangle(intersection,i/3);
-                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
-                        SplitTriangle(intersection,i/3);
-                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection) && intersection != vA && intersection != vB && intersection != vC && other.IsInTriangle(intersection, j/3))
-                        SplitTriangle(intersection,i/3);
+                
+                    // TODO: Something is terribly incorrect here...
+                
+                    if (FindCoplanar(vA, vB, tA, tB, tC, out intersection) && intersection != vA &&
+                        intersection != vB && intersection != vC && other.IsInTriangle(intersection, j / 3))
+                        SplitTriangle(intersection, i / 3);
+                
+                    if (FindCoplanar(vB, vC, tA, tB, tC, out intersection) && intersection != vA &&
+                        intersection != vB && intersection != vC && other.IsInTriangle(intersection, j / 3))
+                    {
+                        SplitTriangle(intersection, i / 3);
+                    }
+                
+                    if (FindCoplanar(vC, vA, tA, tB, tC, out intersection) && intersection != vA &&
+                        intersection != vB && intersection != vC &&
+                        other.IsInTriangle(intersection, j / 3)) SplitTriangle(intersection, i / 3);
                 }
             }
-            
-            
         }
-        
+
         public bool Contains(Vector3 point)
         {
-            
-            //FIXME: Fails detecting. Project orthographically to properly detect.
             // int nt = 0;
-            float nearestDistance = float.PositiveInfinity;
-            for (int i = 0; i < ibuf.Count; i+=3)
+            var nearestDistance = float.PositiveInfinity;
+            for (var i = 0; i < ibuf.Count; i += 3)
             {
-                // Console.WriteLine($"\ni == {i}, Triangle {i/3} ------------");
-                // Console.WriteLine($"A = {vbuf[ibuf[i]].Position}");
-                // Console.WriteLine($"B = {vbuf[ibuf[i+1]].Position}");
-                // Console.WriteLine($"C = {vbuf[ibuf[i+2]].Position}");
-                
                 // Using the X-Z plane for projection (bottom-top view).
                 Vector2 vertexA = new Vector2(vbuf[ibuf[i]].Position.X, vbuf[ibuf[i]].Position.Z);
-                Vector2 vertexB = new Vector2(vbuf[ibuf[i+1]].Position.X, vbuf[ibuf[i+1]].Position.Z);
-                Vector2 vertexC = new Vector2(vbuf[ibuf[i+2]].Position.X, vbuf[ibuf[i+2]].Position.Z);
+                Vector2 vertexB = new Vector2(vbuf[ibuf[i + 1]].Position.X, vbuf[ibuf[i + 1]].Position.Z);
+                Vector2 vertexC = new Vector2(vbuf[ibuf[i + 2]].Position.X, vbuf[ibuf[i + 2]].Position.Z);
                 Vector2 point2d = new Vector2(point.X, point.Z);
 
                 Vector2 sideA = vertexB - vertexA;
                 Vector2 sideB = vertexC - vertexB;
                 Vector2 sideC = vertexA - vertexC;
-                
+
                 if (sideA.X * sideB.Y - sideA.Y * sideB.X == 0)
                     continue;
-                
+
                 Vector2 segmentA = point2d - vertexA;
                 Vector2 segmentB = point2d - vertexB;
                 Vector2 segmentC = point2d - vertexC;
-                
+
                 // Ax*By - Ay*Bx = the z component of a cross product
                 float xa = segmentA.X * sideA.Y - segmentA.Y * sideA.X;
                 float xb = segmentB.X * sideB.Y - segmentB.Y * sideB.X;
@@ -266,18 +327,14 @@ namespace PerceptualArtSolver
                 if (!inTriangle)
                     continue;
 
-                Vector3 normal = Vector3.Normalize(Vector3.Cross(vbuf[ibuf[i+2]].Position-vbuf[ibuf[i]].Position, vbuf[ibuf[i+1]].Position-vbuf[ibuf[i]].Position));
+                Vector3 normal = Vector3.Normalize(Vector3.Cross(vbuf[ibuf[i + 2]].Position - vbuf[ibuf[i]].Position,
+                    vbuf[ibuf[i + 1]].Position - vbuf[ibuf[i]].Position));
                 float dot = Vector3.Dot(normal, point - vbuf[ibuf[i]].Position);
-                
-                if (Math.Abs(nearestDistance) > Math.Abs(dot))
-                {
-                    nearestDistance = dot;
-                }
 
+                if (Math.Abs(nearestDistance) > Math.Abs(dot)) nearestDistance = dot;
             }
 
             return nearestDistance <= 0;
-            
         }
 
         public void AddTriangle(short index1, short index2, short index3)
@@ -287,7 +344,7 @@ namespace PerceptualArtSolver
             ibuf.Add(index3);
         }
 
-        
+
         public void RemoveTriangle(int triangle)
         {
             ibuf.RemoveRange(triangle * 3, 3);
@@ -296,49 +353,43 @@ namespace PerceptualArtSolver
         public void SplitTriangle(Vector3 point, int triangle)
         {
             // O(1)
-            Vector3 sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;
-            Vector3 sideB = vbuf[ibuf[triangle * 3 + 2]].Position - vbuf[ibuf[triangle * 3 + 1]].Position;
-            Vector3 sideC = vbuf[ibuf[triangle * 3]].Position - vbuf[ibuf[triangle * 3 + 2]].Position;
+            var sideA = vbuf[ibuf[triangle * 3 + 1]].Position - vbuf[ibuf[triangle * 3]].Position;
+            var sideB = vbuf[ibuf[triangle * 3 + 2]].Position - vbuf[ibuf[triangle * 3 + 1]].Position;
+            var sideC = vbuf[ibuf[triangle * 3]].Position - vbuf[ibuf[triangle * 3 + 2]].Position;
 
             Matrix to, from;
             BarycentricMatrices(vbuf[ibuf[triangle * 3]].Position, vbuf[ibuf[triangle * 3 + 1]].Position,
                 vbuf[ibuf[triangle * 3 + 2]].Position, out to, out from);
 
-            Vector3 barycentric = Vector3.Transform(point, to);
-            
-            // normal = b_x * vB 
-            Vector3 normal = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].Normal +
-                             barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].Normal + (1 - barycentric.Z - barycentric.Y) *
-                             barycentric.X * vbuf[ibuf[triangle * 3]].Normal;
+            var barycentric = Vector3.Transform(point, to);
 
-            Vector2 textureCoordinate = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].TextureCoordinate +
-                                        barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].TextureCoordinate +
-                                        (1 - barycentric.X - barycentric.Y) *
-                                        vbuf[ibuf[triangle * 3]].TextureCoordinate;
+            // normal = b_x * vB 
+            var normal = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].Normal +
+                         barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].Normal + (1 - barycentric.Z - barycentric.Y) *
+                         barycentric.X * vbuf[ibuf[triangle * 3]].Normal;
+
+            var textureCoordinate = barycentric.X * vbuf[ibuf[triangle * 3 + 1]].TextureCoordinate +
+                                    barycentric.Y * vbuf[ibuf[triangle * 3 + 2]].TextureCoordinate +
+                                    (1 - barycentric.X - barycentric.Y) *
+                                    vbuf[ibuf[triangle * 3]].TextureCoordinate;
 
             vbuf.Add(new VertexPositionNormalTexture(point, Vector3.Normalize(normal), textureCoordinate));
 
 
             if (Vector3.Cross(sideA, point - vbuf[ibuf[triangle * 3]].Position).LengthSquared() > 0)
-            {
-                AddTriangle((short) (vbuf.Count - 1), (short) ibuf[(triangle * 3)], (short) ibuf[(triangle * 3 + 1)]);
-            }
+                AddTriangle((short) (vbuf.Count - 1), ibuf[triangle * 3], ibuf[triangle * 3 + 1]);
 
-            if (Vector3.Cross(sideB, point - vbuf[ibuf[triangle * 3 + 1]].Position ).LengthSquared() > 0)
-            {
-                AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) (vbuf.Count - 1), (short) ibuf[(triangle * 3 + 1)]);
-            }
+            if (Vector3.Cross(sideB, point - vbuf[ibuf[triangle * 3 + 1]].Position).LengthSquared() > 0)
+                AddTriangle(ibuf[triangle * 3 + 2], (short) (vbuf.Count - 1), ibuf[triangle * 3 + 1]);
 
-            if (Vector3.Cross(sideC, point- vbuf[ibuf[triangle * 3 + 2]].Position).LengthSquared() > 0)
-            {
-                AddTriangle((short) ibuf[(triangle * 3 + 2)], (short) ibuf[(triangle * 3)], (short) (vbuf.Count - 1));
-            }
+            if (Vector3.Cross(sideC, point - vbuf[ibuf[triangle * 3 + 2]].Position).LengthSquared() > 0)
+                AddTriangle(ibuf[triangle * 3 + 2], ibuf[triangle * 3], (short) (vbuf.Count - 1));
 
             RemoveTriangle(triangle);
         }
 
         /// <summary>
-        /// Produces a matrix that transforms from world coordinates to barycentric coordinates.
+        ///     Produces a matrix that transforms from world coordinates to barycentric coordinates.
         /// </summary>
         /// <param name="p0"></param>
         /// <param name="p1"></param>
@@ -346,22 +397,14 @@ namespace PerceptualArtSolver
         /// <param name="to"></param>
         public static void BarycentricMatrices(Vector3 p0, Vector3 p1, Vector3 p2, out Matrix to, out Matrix from)
         {
-            Vector3 d1 = p1 - p0;
-            Vector3 d2 = p2 - p0;
-            Vector3 cross = Vector3.Cross(d2, d1);
-            
-            from = new Matrix(d1.X, d1.Y, d1.Z, 0, d2.X, d2.Y, d2.Z, 0, cross.X, cross.Y, cross.Z, 0, p0.X, p0.Y, p0.Z, 1);
+            var d1 = p1 - p0;
+            var d2 = p2 - p0;
+            var cross = Vector3.Cross(d2, d1);
+
+            from = new Matrix(d1.X, d1.Y, d1.Z, 0, d2.X, d2.Y, d2.Z, 0, cross.X, cross.Y, cross.Z, 0, p0.X, p0.Y, p0.Z,
+                1);
 
             Matrix.Invert(ref from, out to);
-        }
-
-        public object Clone()
-        {
-            var o = new DynamicModel();
-            o.ibuf.AddRange(ibuf);
-            o.vbuf.AddRange(vbuf);
-            o.Effect = Effect;
-            return o;
         }
     }
 }

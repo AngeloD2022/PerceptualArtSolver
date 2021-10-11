@@ -10,7 +10,7 @@ namespace PerceptualArtSolver
         {
             Model = model;
         }
-        
+
         public override void Draw(Camera camera)
         {
             Model.Draw(Matrix.CreateTranslation(Position), camera);
